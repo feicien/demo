@@ -1,5 +1,6 @@
 package com.shencoder.demo;
 
+import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.util.Log;
@@ -8,15 +9,19 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.shencoder.demo.grid.PagerGridLayoutManager;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     public static final String TAG = "MainActivity";
+    private TestAdapter mAdapter;
+    private PagerGridLayoutManager mLayoutManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,10 +41,9 @@ public class MainActivity extends AppCompatActivity {
         });
         TextView tvPagerIndex = findViewById(R.id.tvPagerIndex);
         TextView tvPagerCount = findViewById(R.id.tvPagerCount);
-        final PagerGridLayoutManager layoutManager = new PagerGridLayoutManager(4, 3);
+        mLayoutManager = new PagerGridLayoutManager(4, 3);
 
-
-        layoutManager.setPagerChangedListener(new PagerGridLayoutManager.PagerChangedListener() {
+        mLayoutManager.setPagerChangedListener(new PagerGridLayoutManager.PagerChangedListener() {
             @Override
             public void onPagerCountChanged(int pagerCount) {
                 Log.w(TAG, "onPagerCountChanged-pagerCount:" + pagerCount);
@@ -54,30 +58,99 @@ public class MainActivity extends AppCompatActivity {
         });
 
         //设置滑动每像素需要花费的时间
-        layoutManager.setMillisecondPreInch(100);
+        mLayoutManager.setMillisecondPreInch(100);
         //设置最大滚动时间
-        layoutManager.setMaxScrollOnFlingDuration(500);
+        mLayoutManager.setMaxScrollOnFlingDuration(500);
 
-        rv.setLayoutManager(layoutManager);
+        rv.setLayoutManager(mLayoutManager);
 
         List<TestBean> list = new ArrayList<>();
         for (int i = 0; i < 50; i++) {
             list.add(new TestBean(i, String.valueOf(i)));
         }
 
-        TestAdapter adapter = new TestAdapter(list);
-        rv.setAdapter(adapter);
+        mAdapter = new TestAdapter(list);
+        rv.setAdapter(mAdapter);
 
-//        adapter.setOnItemClickListener((adapter1, view1, position) -> {
-//            Toast.makeText(this, "点击了位置：" + position, Toast.LENGTH_SHORT).show();
-//        });
-//        //长按删除数据
-//        adapter.setOnItemLongClickListener((adapter12, view12, position) -> {
-//            Toast.makeText(this, "删除了位置：" + position, Toast.LENGTH_SHORT).show();
-//            adapter12.removeAt(position);
-//            return true;
-//        });
-
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(callback);
+        itemTouchHelper.attachToRecyclerView(rv);
 
     }
+
+
+    ItemTouchHelper.Callback callback = new ItemTouchHelper.Callback() {
+        @Override
+        public boolean isLongPressDragEnabled() {
+            // 启用长按拖拽
+            return true;
+        }
+
+        @Override
+        public boolean isItemViewSwipeEnabled() {
+            // 如果你还想启用滑动删除，可以在这里返回true
+            return false;
+        }
+
+        @Override
+        public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+            // 设置拖拽方向为上下左右
+            int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN | ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT;
+            return makeMovementFlags(dragFlags, 0);
+        }
+
+        @Override
+        public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+            // 通知Adapter有项目移动了
+            final int fromPosition = viewHolder.getAdapterPosition();
+            final int toPosition = target.getAdapterPosition();
+            Collections.swap(mAdapter.getList(), fromPosition, toPosition);
+            mAdapter.notifyItemMoved(fromPosition, toPosition);
+            return true;
+        }
+
+        @Override
+        public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+            // 这里处理滑动删除，我们不需要这个功能，所以留空
+        }
+
+
+        @Override
+        public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
+            super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
+
+            if (actionState == ItemTouchHelper.ACTION_STATE_DRAG && isCurrentlyActive) {
+
+                // 计算item左边缘和右边缘的位置（相对于RecyclerView）
+                int itemLeftEdge = viewHolder.itemView.getLeft() + (int) dX;
+                int itemRightEdge = viewHolder.itemView.getRight() + (int) dX;
+
+                // 获取RecyclerView的边界信息
+                Rect bounds = new Rect();
+                recyclerView.getDrawingRect(bounds);
+
+                int threshold = 0;
+
+
+                // 判断是否接近屏幕边缘
+                if (itemLeftEdge < bounds.left - threshold) {
+                    // 在左边缘附近
+                    Log.d(TAG, "left111 ------ itemLeftEdge: " + itemLeftEdge + " bounds.left: " + bounds.left);
+//                    mLayoutManager.scrollToPre();
+//                    mLayoutManager.scrollToPrePager();
+                    mLayoutManager.smoothScrollToPrePager();
+                    Log.d(TAG, "left222 ------ itemLeftEdge: " + itemLeftEdge + " bounds.left: " + bounds.left);
+
+                } else if (itemRightEdge > bounds.right + threshold) {
+                    // 在右边缘附近
+
+                    Log.d(TAG, "right111 ----- itemRightEdge: " + itemRightEdge + " bounds.right: " + bounds.right);
+//                    mLayoutManager.scrollToNext();
+//                    mLayoutManager.scrollToNextPager();
+                    mLayoutManager.smoothScrollToNextPager();
+                    Log.d(TAG, "right222 ----- itemRightEdge: " + itemRightEdge + " bounds.right: " + bounds.right);
+                }
+            }
+        }
+    };
+
 }

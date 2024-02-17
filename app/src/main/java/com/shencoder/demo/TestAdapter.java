@@ -37,6 +37,10 @@ public class TestAdapter extends RecyclerView.Adapter<TestAdapter.ViewHolder> {
         holder.myTextView.setText(testBean.name);
     }
 
+    public List<TestBean> getList() {
+        return mList;
+    }
+
     public static class ViewHolder extends RecyclerView.ViewHolder {
         private final TextView myTextView;
 
