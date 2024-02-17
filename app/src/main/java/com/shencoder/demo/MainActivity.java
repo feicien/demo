@@ -3,6 +3,8 @@ package com.shencoder.demo;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -22,6 +24,26 @@ public class MainActivity extends AppCompatActivity {
     public static final String TAG = "MainActivity";
     private TestAdapter mAdapter;
     private PagerGridLayoutManager mLayoutManager;
+    private static final int MESSAGE_SCROLL_TO_PREVIOUS_PAGE = 1;
+    private static final int MESSAGE_SCROLL_TO_NEXT_PAGE = 2;
+
+    // 定义一个Handler和Runnable用于延时任务
+    private final Handler edgeDetectionHandler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(@NonNull Message msg) {
+            switch (msg.what) {
+                case MESSAGE_SCROLL_TO_PREVIOUS_PAGE:
+                    mLayoutManager.smoothScrollToPrePager();
+                    Log.d(TAG, "MESSAGE_SCROLL_TO_PREVIOUS_PAGE");
+                    break;
+                case MESSAGE_SCROLL_TO_NEXT_PAGE:
+                    mLayoutManager.smoothScrollToNextPager();
+                    Log.d(TAG, "MESSAGE_SCROLL_TO_NEXT_PAGE");
+                    break;
+            }
+            return true;
+        }
+    });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,6 +100,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+
+    private void triggerEdgeDetection(int edge) {
+        // 取消之前的消息以避免重复处理
+        cancelEdgeDetection();
+
+        Message msg = Message.obtain(); // 获取一个消息对象
+        msg.what = edge; // 设置消息类型
+        edgeDetectionHandler.sendMessageDelayed(msg, 1000); // 延迟1秒发送消息
+    }
+
+    private void cancelEdgeDetection() {
+        edgeDetectionHandler.removeMessages(MESSAGE_SCROLL_TO_PREVIOUS_PAGE);
+        edgeDetectionHandler.removeMessages(MESSAGE_SCROLL_TO_NEXT_PAGE);
+    }
+
     ItemTouchHelper.Callback callback = new ItemTouchHelper.Callback() {
         @Override
         public boolean isLongPressDragEnabled() {
@@ -128,27 +165,21 @@ public class MainActivity extends AppCompatActivity {
                 Rect bounds = new Rect();
                 recyclerView.getDrawingRect(bounds);
 
-                int threshold = 0;
-
+                int leftThreshold = bounds.left;
+                int rightThreshold = bounds.right;
 
                 // 判断是否接近屏幕边缘
-                if (itemLeftEdge < bounds.left - threshold) {
-                    // 在左边缘附近
-                    Log.d(TAG, "left111 ------ itemLeftEdge: " + itemLeftEdge + " bounds.left: " + bounds.left);
-//                    mLayoutManager.scrollToPre();
-//                    mLayoutManager.scrollToPrePager();
-                    mLayoutManager.smoothScrollToPrePager();
-                    Log.d(TAG, "left222 ------ itemLeftEdge: " + itemLeftEdge + " bounds.left: " + bounds.left);
-
-                } else if (itemRightEdge > bounds.right + threshold) {
-                    // 在右边缘附近
-
-                    Log.d(TAG, "right111 ----- itemRightEdge: " + itemRightEdge + " bounds.right: " + bounds.right);
-//                    mLayoutManager.scrollToNext();
-//                    mLayoutManager.scrollToNextPager();
-                    mLayoutManager.smoothScrollToNextPager();
-                    Log.d(TAG, "right222 ----- itemRightEdge: " + itemRightEdge + " bounds.right: " + bounds.right);
+                if (itemLeftEdge < leftThreshold) {
+                    Log.d(TAG, "left ------ itemLeftEdge: " + itemLeftEdge + " bounds.left: " + bounds.left);
+                    triggerEdgeDetection(MESSAGE_SCROLL_TO_PREVIOUS_PAGE);
+                } else if (itemRightEdge > rightThreshold) {
+                    Log.d(TAG, "right ----- itemRightEdge: " + itemRightEdge + " bounds.right: " + bounds.right);
+                    triggerEdgeDetection(MESSAGE_SCROLL_TO_NEXT_PAGE);
+                } else {
+                    cancelEdgeDetection();
                 }
+            } else {
+                cancelEdgeDetection();
             }
         }
     };
