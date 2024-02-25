@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
-import com.feicien.viewpager.demo.adapter.BasePagerAdapter;
+import com.feicien.viewpager.demo.adapter.GridPagerAdapter;
 import com.feicien.viewpager.demo.utils.LogUtils;
 
 
@@ -67,8 +67,8 @@ public class RecyclerViewPager extends ViewPager {
     public void release() {
         LogUtils.i(TAG, "release");
         PagerAdapter adapter = getAdapter();
-        if (adapter instanceof BasePagerAdapter) {
-            ((BasePagerAdapter) adapter).release();
+        if (adapter instanceof GridPagerAdapter) {
+            ((GridPagerAdapter) adapter).release();
         }
         removeAllViews();
     }
@@ -76,8 +76,7 @@ public class RecyclerViewPager extends ViewPager {
     public void restore() {
         LogUtils.i(TAG, "restore");
         PagerAdapter adapter = getAdapter();
-        if (adapter instanceof BasePagerAdapter) {
-            ((BasePagerAdapter) adapter).setContext(getContext());
+        if (adapter instanceof GridPagerAdapter) {
             adapter.notifyDataSetChanged();
         }
     }
@@ -112,8 +111,8 @@ public class RecyclerViewPager extends ViewPager {
     @Override 
     public void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        if (getAdapter() instanceof BasePagerAdapter) {
-            ((BasePagerAdapter) getAdapter()).release();
+        if (getAdapter() instanceof GridPagerAdapter) {
+            ((GridPagerAdapter) getAdapter()).release();
             LogUtils.i(TAG, "onDetachedFromWindow");
         }
         release();

@@ -4,12 +4,14 @@ import android.content.Context;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
 import com.feicien.viewpager.demo.R;
@@ -20,11 +22,16 @@ import com.feicien.viewpager.demo.drag.DragManager;
 import com.feicien.viewpager.demo.drag.RecyclerDragListenerImp;
 import com.feicien.viewpager.demo.utils.LogUtils;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 
-public class GridPagerAdapter extends BasePagerAdapter {
+public class GridPagerAdapter extends PagerAdapter {
+    private final List<AppIconInfo> mAppIconData;
+    protected WeakReference<Context> mContextRef;
+    private final List<ViewGroup> mPagesList = new ArrayList();
     private static final String TAG = "GridPagerAdapter";
     private final int mColumn;
     private final List<List<AppIconInfo>> mPageData;
@@ -35,7 +42,11 @@ public class GridPagerAdapter extends BasePagerAdapter {
 
 
     public GridPagerAdapter(Context context, List<AppIconInfo> list, DragListenerDispatcher<ViewPager> dragListenerDispatcher, int row, int column) {
-        super(context, list);
+        ArrayList arrayList = new ArrayList();
+        this.mAppIconData = arrayList;
+        this.mContextRef = new WeakReference<>(context);
+        arrayList.clear();
+        arrayList.addAll(list);
         this.mPageData = new ArrayList();
         this.mRow = row;
         this.mColumn = column;
@@ -45,6 +56,154 @@ public class GridPagerAdapter extends BasePagerAdapter {
         dragListenerDispatcher.attachDragManager(dragManager);
     }
 
+
+    protected FrameLayout createPage(Context context) {
+        FrameLayout frameLayout = new FrameLayout(context);
+        frameLayout.addView(onCreatePage(frameLayout), new FrameLayout.LayoutParams(-1, -1));
+        return frameLayout;
+    }
+
+    public RecyclerView onCreatePage(ViewGroup viewGroup) {
+        if (viewGroup != null && viewGroup.getContext() != null) {
+            RecyclerView recyclerView = new RecyclerView(viewGroup.getContext());
+
+            recyclerView.setOverScrollMode(2);
+            recyclerView.setVerticalScrollBarEnabled(false);
+            return recyclerView;
+        }
+        return new RecyclerView(this.mContextRef.get());
+    }
+
+    @Override
+    public void destroyItem(ViewGroup viewGroup, int position, Object obj) {
+        if (obj instanceof View) {
+            viewGroup.removeView((View) obj);
+        }
+        if (obj instanceof ViewGroup) {
+            ViewGroup viewGroup2 = (ViewGroup) obj;
+            if (viewGroup2.getChildCount() > 0) {
+                View childAt = viewGroup2.getChildAt(0);
+                if (childAt instanceof RecyclerView) {
+                    onUnbindPage((RecyclerView) childAt, position);
+                }
+            }
+        }
+    }
+
+
+    public List<AppIconInfo> getAllData() {
+        ArrayList<AppIconInfo> arrayList = new ArrayList<>();
+        int size = this.mPageData.size();
+        for (int i = 0; i < size; i++) {
+            arrayList.addAll(this.mPageData.get(i));
+        }
+        return arrayList;
+    }
+
+    @Override
+    public int getCount() {
+        if (mPagesList.isEmpty() && (this.mAppIconData) != null && !mAppIconData.isEmpty()) {
+
+
+            Context context = this.mContextRef.get();
+            if (this.mContextRef != null && context != null) {
+
+                initPages(context);
+            }
+
+        }
+        return this.mPagesList.size();
+    }
+
+    @Override
+    public int getItemPosition(Object obj) {
+        return -2;
+    }
+
+    public Optional<RecyclerView> getPage(int i) {
+        List<ViewGroup> list = this.mPagesList;
+        if (list != null && list.size() > 0) {
+            View childAt = this.mPagesList.get(i).getChildAt(0);
+            if (childAt instanceof RecyclerView) {
+                return Optional.of((RecyclerView) childAt);
+            }
+        }
+        return Optional.empty();
+    }
+
+    public int getPageNum() {
+        return this.mPageData.size();
+    }
+
+    public final int getPageSize() {
+        return this.mPagesList.size();
+    }
+
+    protected void initPages(Context context) {
+        if (context == null) {
+            return;
+        }
+        int pageNum = getPageNum();
+        for (int i = 0; i < pageNum; i++) {
+            this.mPagesList.add(createPage(context));
+        }
+    }
+
+    @Override
+    public Object instantiateItem(ViewGroup viewGroup, int i) {
+        if (viewGroup == null) {
+            return new Object();
+        }
+        List<ViewGroup> list = this.mPagesList;
+        if (list == null || list.isEmpty() || i < 0 || i >= this.mPagesList.size()) {
+            return new Object();
+        }
+        ViewGroup viewGroup2 = this.mPagesList.get(i);
+        if (viewGroup2.getParent() == null) {
+            viewGroup.addView(viewGroup2);
+        }
+        View childAt = viewGroup2.getChildAt(0);
+        if (childAt instanceof ViewGroup) {
+            ViewGroup viewGroup3 = (ViewGroup) childAt;
+            if ((childAt instanceof RecyclerView) && viewGroup3.getChildCount() == 0) {
+                onBindPage(viewGroup.getContext(), (RecyclerView) childAt, i);
+            }
+        }
+        return viewGroup2;
+    }
+
+    @Override
+    public boolean isViewFromObject(View view, Object obj) {
+        return view == obj;
+    }
+
+
+    public void release() {
+        if (getPageSize() <= 0) {
+            return;
+        }
+        int pageNum = getPageNum();
+        for (int i = 0; i < pageNum; i++) {
+            if (getPage(i).isPresent()) {
+                RecyclerView.LayoutManager layoutManager = getPage(i).get().getLayoutManager();
+                if (layoutManager instanceof LinearLayoutManager) {
+                    ((LinearLayoutManager) layoutManager).setRecycleChildrenOnDetach(false);
+                }
+            }
+        }
+        DragManager<RecyclerView> dragManager = this.mDragManager;
+        if (dragManager == null) {
+            LogUtils.d(TAG, "release mDragManager is null.");
+        } else {
+            dragManager.removeAllListener();
+        }
+        WeakReference<Context> weakReference = this.mContextRef;
+        if (weakReference != null) {
+            weakReference.clear();
+        }
+        this.mPagesList.clear();
+        notifyDataSetChanged();
+    }
 
 
     public class MyGridRecyclerAdapter extends DragAdapter<ViewHolder> {
@@ -78,7 +237,6 @@ public class GridPagerAdapter extends BasePagerAdapter {
             if (viewHolder == null) {
                 return;
             }
-
 
 
             ViewGroup.LayoutParams layoutParams = viewHolder.mAppNameView.getLayoutParams();
@@ -185,7 +343,6 @@ public class GridPagerAdapter extends BasePagerAdapter {
     }
 
 
-
     public static class ViewHolder extends RecyclerView.ViewHolder {
 
         private final int mPageIndex;
@@ -203,7 +360,6 @@ public class GridPagerAdapter extends BasePagerAdapter {
             return this.mPageIndex;
         }
     }
-
 
 
     public abstract class DragAdapter<VH extends ViewHolder> extends GridRecycleAdapter<VH> implements DragNotifier {
@@ -292,13 +448,11 @@ public class GridPagerAdapter extends BasePagerAdapter {
     }
 
 
-
     public long getDraggingId(int pageIndex) {
         return this.mDragManager.getDraggingId(pageIndex);
     }
 
 
-    @Override
     public void onBindPage(Context context, RecyclerView recyclerView, int i) {
         if (recyclerView == null) {
             LogUtils.d(TAG, "onBindPage recyclerView is null.");
@@ -320,13 +474,11 @@ public class GridPagerAdapter extends BasePagerAdapter {
         }
     }
 
-    @Override
     public void onUnbindPage(RecyclerView recyclerView, int position) {
         if (recyclerView == null) {
             LogUtils.d(TAG, "onUnbindPage view is null.");
             return;
         }
-        super.onUnbindPage(recyclerView, position);
         DragManager<RecyclerView> dragManager = this.mDragManager;
         if (dragManager == null) {
             LogUtils.d(TAG, "onUnbindPage mDragManager is null.");
@@ -335,31 +487,7 @@ public class GridPagerAdapter extends BasePagerAdapter {
         }
     }
 
-    @Override
-    public void release() {
-        if (getPageSize() <= 0) {
-            return;
-        }
-        int pageNum = getPageNum();
-        for (int i = 0; i < pageNum; i++) {
-            if (getPage(i).isPresent()) {
-                RecyclerView.LayoutManager layoutManager = getPage(i).get().getLayoutManager();
-                if (layoutManager instanceof LinearLayoutManager) {
-                    ((LinearLayoutManager) layoutManager).setRecycleChildrenOnDetach(false);
-                }
-            }
-        }
-        DragManager<RecyclerView> dragManager = this.mDragManager;
-        if (dragManager == null) {
-            LogUtils.d(TAG, "release mDragManager is null.");
-        } else {
-            dragManager.removeAllListener();
-        }
-        super.release();
-    }
 
-
-    
     public abstract class GridRecycleAdapter<VH extends ViewHolder> extends RecyclerView.Adapter<VH> {
         protected List<AppIconInfo> data = new ArrayList();
         protected int mPageIndex;
@@ -377,14 +505,11 @@ public class GridPagerAdapter extends BasePagerAdapter {
             return new ArrayList(this.data);
         }
 
-        @Override 
+        @Override
         public int getItemCount() {
             return this.data.size();
         }
 
-        public AppIconInfo getValue(int i) {
-            return this.data.get(i);
-        }
 
         public void updateData(List<AppIconInfo> list) {
             if (list == null || list.isEmpty()) {
@@ -397,33 +522,29 @@ public class GridPagerAdapter extends BasePagerAdapter {
             notifyDataSetChanged();
         }
 
-        @Override 
+        @Override
         public void onBindViewHolder(VH vh, int position) {
-            onBindViewHolder( vh, position, this.mPageIndex);
+            onBindViewHolder(vh, position, this.mPageIndex);
         }
 
-        @Override 
+        @Override
         public VH onCreateViewHolder(ViewGroup viewGroup, int viewType) {
             return onCreateViewHolder(viewGroup, viewType, this.mPageIndex);
         }
     }
 
-    
+
     public static class PagerGridLayoutManager extends GridLayoutManager {
         private PagerGridLayoutManager(Context context, int spanCount, int orientation, boolean reverseLayout) {
             super(context, spanCount, orientation, reverseLayout);
             setRecycleChildrenOnDetach(true);
         }
 
-        @Override 
+        @Override
         public boolean canScrollVertically() {
             return false;
         }
     }
-
-    
-
-
 
 
     private RecyclerView.LayoutManager getLayoutManager(Context context) {
@@ -434,24 +555,11 @@ public class GridPagerAdapter extends BasePagerAdapter {
         return this.mPageData.get(i);
     }
 
-    @Override 
-    public List<AppIconInfo> getAllData() {
-        ArrayList<AppIconInfo> arrayList = new ArrayList<>();
-        int size = this.mPageData.size();
-        for (int i = 0; i < size; i++) {
-            arrayList.addAll(this.mPageData.get(i));
-        }
-        return arrayList;
-    }
 
     public int getPageContentSize() {
         return this.mColumn * this.mRow;
     }
 
-    @Override 
-    public int getPageNum() {
-        return this.mPageData.size();
-    }
 
     public void notifyPageChanged(int i) {
         if (i < 0 || i >= getCount()) {
@@ -471,51 +579,6 @@ public class GridPagerAdapter extends BasePagerAdapter {
         gridRecycleAdapter.notifyDataSetChanged();
     }
 
-
-
-    @Override 
-    public RecyclerView onCreatePage(ViewGroup viewGroup) {
-        if (viewGroup != null && viewGroup.getContext() != null) {
-            RecyclerView recyclerView = new RecyclerView(viewGroup.getContext());
-
-            recyclerView.setOverScrollMode(2);
-            recyclerView.setVerticalScrollBarEnabled(false);
-            return recyclerView;
-        }
-        return new RecyclerView(this.mContextRef.get());
-    }
-
-    public void reBindAllPage() {
-        for (int i = 0; i < getCount(); i++) {
-            notifyPageChanged(i);
-        }
-    }
-
-
-
-    public void removePageData(AppIconInfo appIconInfo) {
-        if (appIconInfo == null) {
-            LogUtils.d(TAG, "removePageData appIconInfo is null.");
-            return;
-        }
-        int pageNum = getPageNum();
-        List<AppIconInfo> allData = getAllData();
-        if (allData.remove(appIconInfo)) {
-            updateAllPageData(allData);
-            if (pageNum != getPageNum()) {
-                removePage(pageNum - 1);
-            } else {
-                reBindAllPage();
-            }
-        }
-    }
-
-    public void setData(List<AppIconInfo> list) {
-        if (list != null) {
-            updateAllPageData(list);
-            reCreateAllPages(list);
-        }
-    }
 
     public void switchPageItem(int i, int i2) {
         List<AppIconInfo> allData = getAllData();
@@ -558,4 +621,5 @@ public class GridPagerAdapter extends BasePagerAdapter {
     private int getPageNum(List<AppIconInfo> list) {
         return (list.size() / getPageContentSize()) + (list.size() % getPageContentSize() == 0 ? 0 : 1);
     }
+
 }
