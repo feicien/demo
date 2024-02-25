@@ -26,7 +26,6 @@ import com.feicien.viewpager.demo.utils.LogUtils;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 
 public class GridPagerAdapter extends PagerAdapter {
@@ -121,15 +120,14 @@ public class GridPagerAdapter extends PagerAdapter {
         return -2;
     }
 
-    public Optional<RecyclerView> getPage(int i) {
-        List<ViewGroup> list = this.mPagesList;
-        if (list != null && list.size() > 0) {
-            View childAt = this.mPagesList.get(i).getChildAt(0);
+    public RecyclerView getPage(int pageIndex) {
+        if (mPagesList.size() > 0) {
+            View childAt = mPagesList.get(pageIndex).getChildAt(0);
             if (childAt instanceof RecyclerView) {
-                return Optional.of((RecyclerView) childAt);
+                return (RecyclerView) childAt;
             }
         }
-        return Optional.empty();
+        return null;
     }
 
     public int getPageNum() {
@@ -182,8 +180,9 @@ public class GridPagerAdapter extends PagerAdapter {
         }
         int pageNum = getPageNum();
         for (int i = 0; i < pageNum; i++) {
-            if (getPage(i).isPresent()) {
-                RecyclerView.LayoutManager layoutManager = getPage(i).get().getLayoutManager();
+            RecyclerView recyclerView = getPage(i);
+            if (recyclerView != null) {
+                RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
                 if (layoutManager instanceof LinearLayoutManager) {
                     ((LinearLayoutManager) layoutManager).setRecycleChildrenOnDetach(false);
                 }
@@ -240,11 +239,11 @@ public class GridPagerAdapter extends PagerAdapter {
 
 
         private int getPageChildIndexById(int i, long j) {
-            if (!GridPagerAdapter.this.getPage(i).isPresent()) {
+            RecyclerView recyclerView = getPage(i);
+            if (recyclerView == null) {
                 LogUtils.d(TAG, "getPageChildIndexById recyclerView is null.");
                 return -1;
             }
-            RecyclerView recyclerView = GridPagerAdapter.this.getPage(i).get();
             if (recyclerView.getAdapter() == null || !(recyclerView.getAdapter() instanceof MyGridRecyclerAdapter)) {
                 return -1;
             }
@@ -488,21 +487,21 @@ public class GridPagerAdapter extends PagerAdapter {
     }
 
 
-    public void notifyPageChanged(int i) {
-        if (i < 0 || i >= getCount()) {
-            LogUtils.d(TAG, "notifyPageChanged pageIndex " + i);
+    public void notifyPageChanged(int pageIndex) {
+        if (pageIndex < 0 || pageIndex >= getCount()) {
+            LogUtils.d(TAG, "notifyPageChanged pageIndex " + pageIndex);
             return;
         }
-        if (!getPage(i).isPresent()) {
+        RecyclerView recyclerView = getPage(pageIndex);
+        if (recyclerView == null) {
             LogUtils.d(TAG, "notifyPageChanged page View is null.");
             return;
         }
-        RecyclerView recyclerView = getPage(i).get();
         if (recyclerView.getAdapter() == null || !(recyclerView.getAdapter() instanceof MyGridRecyclerAdapter)) {
             return;
         }
         MyGridRecyclerAdapter gridRecycleAdapter = (MyGridRecyclerAdapter) recyclerView.getAdapter();
-        gridRecycleAdapter.updateData(getPageInfo(i));
+        gridRecycleAdapter.updateData(getPageInfo(pageIndex));
         gridRecycleAdapter.notifyDataSetChanged();
     }
 
