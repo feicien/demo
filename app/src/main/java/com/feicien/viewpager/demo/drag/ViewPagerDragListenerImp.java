@@ -44,7 +44,7 @@ public class ViewPagerDragListenerImp extends DragListenerDispatcher<ViewPager> 
         public void run() {
             ViewPager viewPager = this.f34919b;
             if (viewPager == null) {
-                LogUtils.d(ViewPagerDragListenerImp.TAG, "scrollRunnable can not execute, viewpager is null");
+                LogUtils.d(TAG, "scrollRunnable can not execute, viewpager is null");
                 return;
             }
             int currentItem = viewPager.getCurrentItem();

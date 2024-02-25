@@ -4,6 +4,7 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 
+import androidx.annotation.NonNull;
 import androidx.core.view.GestureDetectorCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -23,47 +24,47 @@ public abstract class OnRecyclerItemClickListener implements RecyclerView.OnItem
         this.mRecyclerView = recyclerView;
         this.mGestureDetector = new GestureDetectorCompat(recyclerView.getContext(), new GestureDetector.SimpleOnGestureListener() { 
             @Override 
-            public void onLongPress(MotionEvent motionEvent) {
+            public void onLongPress(@NonNull MotionEvent motionEvent) {
                 View findChildViewUnder = OnRecyclerItemClickListener.this.mRecyclerView.findChildViewUnder(motionEvent.getX(), motionEvent.getY());
                 if (findChildViewUnder != null) {
                     RecyclerView.ViewHolder childViewHolder = OnRecyclerItemClickListener.this.mRecyclerView.getChildViewHolder(findChildViewUnder);
                     if (childViewHolder == null) {
-                        LogUtils.d(OnRecyclerItemClickListener.TAG, "ItemTouchHelperGestureListener onLongPress vh is null");
+                        LogUtils.d(TAG, "ItemTouchHelperGestureListener onLongPress vh is null");
                         return;
                     } else {
                         OnRecyclerItemClickListener.this.onItemLongClick(childViewHolder);
                         return;
                     }
                 }
-                LogUtils.d(OnRecyclerItemClickListener.TAG, "ItemTouchHelperGestureListener onLongPress child is null");
+                LogUtils.d(TAG, "ItemTouchHelperGestureListener onLongPress child is null");
             }
 
             @Override 
-            public boolean onSingleTapUp(MotionEvent motionEvent) {
+            public boolean onSingleTapUp(@NonNull MotionEvent motionEvent) {
                 View findChildViewUnder = OnRecyclerItemClickListener.this.mRecyclerView.findChildViewUnder(motionEvent.getX(), motionEvent.getY());
                 if (findChildViewUnder != null) {
                     RecyclerView.ViewHolder childViewHolder = OnRecyclerItemClickListener.this.mRecyclerView.getChildViewHolder(findChildViewUnder);
                     if (childViewHolder == null) {
-                        LogUtils.d(OnRecyclerItemClickListener.TAG, "ItemTouchHelperGestureListener onSingleTapUp vh is null");
+                        LogUtils.d(TAG, "ItemTouchHelperGestureListener onSingleTapUp vh is null");
                         return false;
                     }
                     OnRecyclerItemClickListener.this.onItemClick(childViewHolder);
                     return true;
                 }
-                LogUtils.d(OnRecyclerItemClickListener.TAG, "ItemTouchHelperGestureListener onSingleTapUp child is null");
+                LogUtils.d(TAG, "ItemTouchHelperGestureListener onSingleTapUp child is null");
                 return false;
             }
         });
     }
 
     @Override 
-    public boolean onInterceptTouchEvent(RecyclerView recyclerView, MotionEvent motionEvent) {
+    public boolean onInterceptTouchEvent(@NonNull RecyclerView recyclerView, @NonNull MotionEvent motionEvent) {
         this.mGestureDetector.onTouchEvent(motionEvent);
         return false;
     }
 
     @Override 
-    public void onTouchEvent(RecyclerView recyclerView, MotionEvent motionEvent) {
+    public void onTouchEvent(@NonNull RecyclerView recyclerView, @NonNull MotionEvent motionEvent) {
         this.mGestureDetector.onTouchEvent(motionEvent);
     }
 
