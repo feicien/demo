@@ -7,7 +7,7 @@ import android.view.ViewConfiguration;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
-import com.feicien.viewpager.demo.adapter.BaseDragPageAdapter;
+import com.feicien.viewpager.demo.adapter.GridPagerAdapter;
 import com.feicien.viewpager.demo.utils.LogUtils;
 
 import java.util.Optional;
@@ -151,8 +151,8 @@ public class ViewPagerDragListenerImp extends DragListenerDispatcher<ViewPager> 
     }
 
     private Optional<RecyclerView> m3484k(int i, ViewPager hwViewPager) {
-        if (hwViewPager.getAdapter() != null && (hwViewPager.getAdapter() instanceof BaseDragPageAdapter)) {
-            return ((BaseDragPageAdapter) hwViewPager.getAdapter()).getPage(i);
+        if (hwViewPager.getAdapter() != null && (hwViewPager.getAdapter() instanceof GridPagerAdapter)) {
+            return ((GridPagerAdapter) hwViewPager.getAdapter()).getPage(i);
         }
         return Optional.empty();
     }

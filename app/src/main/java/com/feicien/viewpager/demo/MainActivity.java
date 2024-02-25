@@ -5,9 +5,9 @@ import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.feicien.viewpager.demo.adapter.GridPagerAdapter;
-import com.feicien.viewpager.demo.widget.RecyclerViewPager;
 import com.feicien.viewpager.demo.bean.AppIconInfo;
 import com.feicien.viewpager.demo.drag.ViewPagerDragListenerImp;
+import com.feicien.viewpager.demo.widget.RecyclerViewPager;
 
 import java.util.ArrayList;
 import java.util.List;

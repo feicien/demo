@@ -61,10 +61,6 @@ public abstract class BasePagerAdapter extends PagerAdapter {
         }
     }
 
-    protected void emptyPages() {
-        this.mPagesList.clear();
-        notifyDataSetChanged();
-    }
 
     protected List<AppIconInfo> getAllData() {
         return this.mAppIconData;
@@ -165,7 +161,8 @@ public abstract class BasePagerAdapter extends PagerAdapter {
         if (weakReference != null) {
             weakReference.clear();
         }
-        emptyPages();
+        this.mPagesList.clear();
+        notifyDataSetChanged();
     }
 
     public void removePage(int i) {
