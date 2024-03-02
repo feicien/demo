@@ -28,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         ViewPagerDragListenerImp viewPagerDragListenerImp = new ViewPagerDragListenerImp(recyclerViewPager);
-        GridPagerAdapter mGridPagerAdapter = new GridPagerAdapter(this, list, viewPagerDragListenerImp,  4, 3);
+        GridPagerAdapter mGridPagerAdapter = new GridPagerAdapter(this, list, 4, 3);
         recyclerViewPager.setOffscreenPageLimit(0);
         recyclerViewPager.setAdapter(mGridPagerAdapter);
         recyclerViewPager.setOnDragListener(viewPagerDragListenerImp);

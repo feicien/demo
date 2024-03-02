@@ -1,5 +1,6 @@
 package com.feicien.viewpager.demo.adapter;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.text.TextUtils;
 import android.view.View;
@@ -13,12 +14,10 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.PagerAdapter;
-import androidx.viewpager.widget.ViewPager;
 
 import com.feicien.viewpager.demo.R;
 import com.feicien.viewpager.demo.bean.AppIconInfo;
 import com.feicien.viewpager.demo.drag.DragInfo;
-import com.feicien.viewpager.demo.drag.DragListenerDispatcher;
 import com.feicien.viewpager.demo.drag.DragManager;
 import com.feicien.viewpager.demo.drag.RecyclerDragListenerImp;
 import com.feicien.viewpager.demo.utils.LogUtils;
@@ -38,22 +37,18 @@ public class GridPagerAdapter extends PagerAdapter {
     private final int mRow;
 
 
-    protected DragManager<RecyclerView> mDragManager;
 
 
-    public GridPagerAdapter(Context context, List<AppIconInfo> list, DragListenerDispatcher<ViewPager> dragListenerDispatcher, int row, int column) {
-        ArrayList arrayList = new ArrayList();
+    public GridPagerAdapter(Context context, List<AppIconInfo> list, int row, int column) {
+        ArrayList<AppIconInfo> arrayList = new ArrayList<>();
         this.mAppIconData = arrayList;
         this.mContextRef = new WeakReference<>(context);
         arrayList.clear();
         arrayList.addAll(list);
-        this.mPageData = new ArrayList();
+        this.mPageData = new ArrayList<>();
         this.mRow = row;
         this.mColumn = column;
         updateAllPageData(list);
-        DragManager<RecyclerView> dragManager = new DragManager<>();
-        this.mDragManager = dragManager;
-        dragListenerDispatcher.attachDragManager(dragManager);
     }
 
 
@@ -121,7 +116,7 @@ public class GridPagerAdapter extends PagerAdapter {
     }
 
     public RecyclerView getPage(int pageIndex) {
-        if (mPagesList.size() > 0) {
+        if (!mPagesList.isEmpty()) {
             View childAt = mPagesList.get(pageIndex).getChildAt(0);
             if (childAt instanceof RecyclerView) {
                 return (RecyclerView) childAt;
@@ -188,12 +183,7 @@ public class GridPagerAdapter extends PagerAdapter {
                 }
             }
         }
-        DragManager<RecyclerView> dragManager = this.mDragManager;
-        if (dragManager == null) {
-            LogUtils.d(TAG, "release mDragManager is null.");
-        } else {
-            dragManager.removeAllListener();
-        }
+        DragManager.getInstance().removeAllListener();
         WeakReference<Context> weakReference = this.mContextRef;
         if (weakReference != null) {
             weakReference.clear();
@@ -216,7 +206,7 @@ public class GridPagerAdapter extends PagerAdapter {
         }
 
         public List<AppIconInfo> getData() {
-            return new ArrayList(this.data);
+            return new ArrayList<>(this.data);
         }
 
         @Override
@@ -225,6 +215,7 @@ public class GridPagerAdapter extends PagerAdapter {
         }
 
 
+        @SuppressLint("NotifyDataSetChanged")
         public void updateData(List<AppIconInfo> list) {
             if (list == null || list.isEmpty()) {
                 LogUtils.d(TAG, "updateData AppIconInfo list is null. ");
@@ -375,7 +366,7 @@ public class GridPagerAdapter extends PagerAdapter {
             }
             View view = viewHolder.itemView;
             RecyclerView recyclerView = view.getParent() instanceof RecyclerView ? (RecyclerView) view.getParent() : null;
-            if (recyclerView == null || mDragManager == null) {
+            if (recyclerView == null) {
                 LogUtils.d(TAG, "onItemLongDragClick recyclerView or mDragManager is null.");
                 return;
             }
@@ -387,7 +378,7 @@ public class GridPagerAdapter extends PagerAdapter {
             DragInfo dragInfo = new DragInfo();
             dragInfo.setPageIndex(c5272b.getPageIndex());
             dragInfo.setItemId(c5272b.getItemId());
-            mDragManager.startDragAndDrop(view, dragInfo);
+            DragManager.getInstance().startDragAndDrop(view, dragInfo);
             LogUtils.i(TAG, "onItemLongDragClick dragInfo" + dragInfo);
             if (recyclerView.getAdapter() != null) {
                 recyclerView.getAdapter().notifyItemChanged(recyclerView.getChildAdapterPosition(view));
@@ -403,8 +394,8 @@ public class GridPagerAdapter extends PagerAdapter {
     public static class ViewHolder extends RecyclerView.ViewHolder {
 
         private final int mPageIndex;
-        private TextView mAppNameView;
-        private ImageView mImageView;
+        private final TextView mAppNameView;
+        private final ImageView mImageView;
 
         ViewHolder(View view, int pageIndex) {
             super(view);
@@ -422,7 +413,7 @@ public class GridPagerAdapter extends PagerAdapter {
 
 
     public long getDraggingId(int pageIndex) {
-        return this.mDragManager.getDraggingId(pageIndex);
+        return DragManager.getInstance().getDraggingId(pageIndex);
     }
 
 
@@ -440,11 +431,7 @@ public class GridPagerAdapter extends PagerAdapter {
             recyclerView.setAdapter(new MyGridRecyclerAdapter(pageInfo, pageIndex));
         }
         recyclerView.setTag(Integer.valueOf(pageIndex));
-        if (this.mDragManager == null) {
-            LogUtils.d(TAG, "onBindPage mDragManager is null.");
-        } else if (recyclerView.getAdapter() instanceof MyGridRecyclerAdapter) {
-            this.mDragManager.addDragListener(pageIndex, new RecyclerDragListenerImp(recyclerView, (MyGridRecyclerAdapter) recyclerView.getAdapter()));
-        }
+        DragManager.getInstance().addDragListener(pageIndex, new RecyclerDragListenerImp(recyclerView, (MyGridRecyclerAdapter) recyclerView.getAdapter()));
     }
 
     public void onUnbindPage(RecyclerView recyclerView, int position) {
@@ -452,12 +439,7 @@ public class GridPagerAdapter extends PagerAdapter {
             LogUtils.d(TAG, "onUnbindPage view is null.");
             return;
         }
-        DragManager<RecyclerView> dragManager = this.mDragManager;
-        if (dragManager == null) {
-            LogUtils.d(TAG, "onUnbindPage mDragManager is null.");
-        } else {
-            dragManager.removeDragListener(position);
-        }
+        DragManager.getInstance().removeDragListener(position);
     }
 
 

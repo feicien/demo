@@ -103,8 +103,8 @@ public class ViewPagerDragListenerImp extends DragListenerDispatcher<ViewPager> 
 
 
     private DragListenerDispatcher getDragDispatcherByPageIndex(int pageIndex, ViewPager viewPager) {
-        if (mDragManager != null && viewPager != null) {
-            DragListenerDispatcher m22979c = mDragManager.getDragListener(pageIndex);
+        if (viewPager != null) {
+            DragListenerDispatcher m22979c = DragManager.getInstance().getDragListener(pageIndex);
             if (viewPager.getCurrentItem() == pageIndex && m22979c != null) {
                 return m22979c;
             }

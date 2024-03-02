@@ -10,7 +10,6 @@ import java.lang.ref.WeakReference;
 
 public abstract class DragListenerDispatcher<V extends View> implements View.OnDragListener {
     private static final String TAG = "DragListenerDispatcher";
-    protected DragManager mDragManager;
     protected final WeakReference<V> mViewRef;
 
     public abstract boolean acceptDrop(DragInfo dragInfo, V v);
@@ -39,9 +38,6 @@ public abstract class DragListenerDispatcher<V extends View> implements View.OnD
         this.mViewRef = new WeakReference<>(v);
     }
 
-    public void attachDragManager(DragManager dragManager) {
-        this.mDragManager = dragManager;
-    }
 
     
     @Override 

@@ -10,6 +10,17 @@ import com.feicien.viewpager.demo.utils.LogUtils;
 
 public class DragManager<V extends View> {
     private static final String TAG = "DragManager";
+
+    //静态内部类
+    private static class SingletonHolder{
+        private static final DragManager singleton = new DragManager();
+    }
+    private DragManager(){}
+    public static DragManager getInstance(){
+        return SingletonHolder.singleton;
+    }
+
+
     private final SparseArray<DragListenerDispatcher<V>> mListeners = new SparseArray<>();
 
     public void addDragListener(int pageIndex, DragListenerDispatcher<V> dragListenerDispatcher) {
