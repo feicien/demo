@@ -13,7 +13,7 @@ import com.feicien.viewpager.demo.utils.LogUtils;
 import java.util.Objects;
 
 
-public class RecyclerDragListenerImp extends DragListenerDispatcher<RecyclerView> {
+public class RecyclerDragListenerImp  {
     private static final String TAG = "RecyclerDragListenerImp";
     private final MyGridRecyclerAdapter mGridRecyclerAdapter;
     private long mDraggingId;
@@ -21,7 +21,6 @@ public class RecyclerDragListenerImp extends DragListenerDispatcher<RecyclerView
     private final PointF point;
 
     public RecyclerDragListenerImp(RecyclerView recyclerView, MyGridRecyclerAdapter adapter) {
-        super(recyclerView);
         this.point = new PointF(Float.MIN_VALUE, Float.MIN_VALUE);
         this.mDraggingId = -1L;
         this.mScrollState = 0;
@@ -69,36 +68,30 @@ public class RecyclerDragListenerImp extends DragListenerDispatcher<RecyclerView
 
     
 
-    @Override 
     public void onDrop(DragInfo dragInfo, RecyclerView recyclerView) {
         if (dragInfo == null) {
             LogUtils.d(TAG, "onDrop dragInfo is null ");
         }
     }
 
-    @Override 
     public void clearMove() {
         this.point.set(Float.MIN_VALUE, Float.MIN_VALUE);
     }
 
-    @Override 
     public long getDraggingId() {
         return this.mDraggingId;
     }
 
-    @Override 
     public boolean acceptDrop(DragInfo dragInfo, RecyclerView recyclerView) {
         return true;
     }
 
-    @Override 
     public void onPageTransfer(DragInfo dragInfo, DragInfo dragInfo2) {
         if (mGridRecyclerAdapter != null) {
             mGridRecyclerAdapter.onPageTransfer(dragInfo, dragInfo2);
         }
     }
 
-    @Override 
     public void onDragEnd(final DragInfo dragInfo, final RecyclerView recyclerView) {
         if (dragInfo != null && recyclerView != null) {
             this.mDraggingId = -1L;
@@ -120,7 +113,6 @@ public class RecyclerDragListenerImp extends DragListenerDispatcher<RecyclerView
     
     
 
-    @Override 
     public void onDragEnter(DragInfo dragInfo, RecyclerView recyclerView) {
         if (dragInfo == null) {
             LogUtils.d(TAG, "onDragEnter dragInfo is null ");
@@ -133,8 +125,7 @@ public class RecyclerDragListenerImp extends DragListenerDispatcher<RecyclerView
         }
     }
 
-    @Override 
-    public void onDragExit(DragInfo dragInfo, RecyclerView recyclerView) {
+    public void onDragExit(DragInfo dragInfo) {
         if (dragInfo == null) {
             LogUtils.d(TAG, "onDragExit dragInfo is null ");
             return;
@@ -146,7 +137,6 @@ public class RecyclerDragListenerImp extends DragListenerDispatcher<RecyclerView
         }
     }
 
-    @Override 
     public void onDragOver(DragInfo dragInfo, final RecyclerView recyclerView) {
         if (dragInfo != null && recyclerView != null) {
             final long itemId = dragInfo.getItemId();
@@ -186,12 +176,10 @@ public class RecyclerDragListenerImp extends DragListenerDispatcher<RecyclerView
         LogUtils.d(TAG, "onDragOver dragInfo or recyclerView is null ");
     }
 
-    @Override 
     public boolean onDragPrepare(DragInfo dragInfo, RecyclerView recyclerView) {
         return Objects.equals(recyclerView.getTag(), Integer.valueOf(dragInfo.getPageIndex()));
     }
 
-    @Override 
     public void onDragStart(DragInfo dragInfo, RecyclerView recyclerView) {
         if (dragInfo != null && recyclerView != null) {
             long itemId = dragInfo.getItemId();

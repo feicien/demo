@@ -8,7 +8,7 @@ import android.view.View;
 import com.feicien.viewpager.demo.utils.LogUtils;
 
 
-public class DragManager<V extends View> {
+public class DragManager {
     private static final String TAG = "DragManager";
 
     //静态内部类
@@ -21,9 +21,9 @@ public class DragManager<V extends View> {
     }
 
 
-    private final SparseArray<DragListenerDispatcher<V>> mListeners = new SparseArray<>();
+    private final SparseArray<RecyclerDragListenerImp> mListeners = new SparseArray<>();
 
-    public void addDragListener(int pageIndex, DragListenerDispatcher<V> dragListenerDispatcher) {
+    public void addDragListener(int pageIndex, RecyclerDragListenerImp dragListenerDispatcher) {
         this.mListeners.put(pageIndex, dragListenerDispatcher);
     }
 
@@ -31,12 +31,12 @@ public class DragManager<V extends View> {
         this.mListeners.clear();
     }
 
-    public DragListenerDispatcher<V> getDragListener(int pageIndex) {
+    public RecyclerDragListenerImp getDragListener(int pageIndex) {
         return this.mListeners.get(pageIndex);
     }
 
     public long getDraggingId(int pageIndex) {
-        DragListenerDispatcher<V> dragListener = getDragListener(pageIndex);
+        RecyclerDragListenerImp dragListener = getDragListener(pageIndex);
         if (dragListener == null) {
             return -1L;
         }
