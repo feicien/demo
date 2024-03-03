@@ -6,7 +6,7 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.feicien.viewpager.demo.adapter.GridPagerAdapter;
+import com.feicien.viewpager.demo.adapter.MyGridRecyclerAdapter;
 import com.feicien.viewpager.demo.adapter.OnRecyclerItemClickListener;
 import com.feicien.viewpager.demo.utils.LogUtils;
 
@@ -15,12 +15,12 @@ import java.util.Objects;
 
 public class RecyclerDragListenerImp extends DragListenerDispatcher<RecyclerView> {
     private static final String TAG = "RecyclerDragListenerImp";
-    private final GridPagerAdapter.MyGridRecyclerAdapter mGridRecyclerAdapter;
+    private final MyGridRecyclerAdapter mGridRecyclerAdapter;
     private long mDraggingId;
     private int mScrollState;
     private final PointF point;
 
-    public RecyclerDragListenerImp(RecyclerView recyclerView, GridPagerAdapter.MyGridRecyclerAdapter adapter) {
+    public RecyclerDragListenerImp(RecyclerView recyclerView, MyGridRecyclerAdapter adapter) {
         super(recyclerView);
         this.point = new PointF(Float.MIN_VALUE, Float.MIN_VALUE);
         this.mDraggingId = -1L;
