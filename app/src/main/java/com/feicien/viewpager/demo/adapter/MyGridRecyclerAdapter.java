@@ -2,6 +2,7 @@ package com.feicien.viewpager.demo.adapter;
 
 import android.annotation.SuppressLint;
 import android.text.TextUtils;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -22,17 +23,15 @@ import java.util.List;
 public class MyGridRecyclerAdapter extends RecyclerView.Adapter<MyGridRecyclerAdapter.ViewHolder> {
 
     private static final String TAG = "MyGridRecyclerAdapter";
+    private final List<AppIconInfo> data = new ArrayList<>();
+    private final int mPageIndex;
+    private final GridPagerAdapter mPagerAdapter;
 
-    protected List<AppIconInfo> data = new ArrayList<>();
-    protected int mPageIndex;
-    private GridPagerAdapter mPagerAdapter;
-
-
-    public MyGridRecyclerAdapter(List<AppIconInfo> list, int i, GridPagerAdapter gridPagerAdapter) {
-        this.mPageIndex = i;
-        mPagerAdapter = gridPagerAdapter;
-        updateData(list);
+    public MyGridRecyclerAdapter(List<AppIconInfo> list, int pageIndex, GridPagerAdapter gridPagerAdapter) {
+        this.mPageIndex = pageIndex;
+        this.mPagerAdapter = gridPagerAdapter;
         setHasStableIds(true);
+        updateData(list);
     }
 
     public List<AppIconInfo> getData() {
@@ -41,7 +40,7 @@ public class MyGridRecyclerAdapter extends RecyclerView.Adapter<MyGridRecyclerAd
 
     @Override
     public int getItemCount() {
-        return this.data.size();
+        return data.size();
     }
 
 
@@ -103,8 +102,8 @@ public class MyGridRecyclerAdapter extends RecyclerView.Adapter<MyGridRecyclerAd
 
 
     @Override
-    public long getItemId(int i) {
-        return getData().get(i).hashCode();
+    public long getItemId(int position) {
+        return getData().get(position).hashCode();
     }
 
     @Override
@@ -147,8 +146,11 @@ public class MyGridRecyclerAdapter extends RecyclerView.Adapter<MyGridRecyclerAd
 
     @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
-        return new ViewHolder(View.inflate(viewGroup.getContext(), R.layout.app_icon_item_layout, null), mPageIndex);
+    @SuppressLint("InflateParams")
+    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        // inflate 这里需要传 null，这样宽度可以实现三等分
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.app_icon_item_layout, null);
+        return new ViewHolder(view, mPageIndex);
     }
 
 
