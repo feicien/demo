@@ -1,6 +1,7 @@
 package com.feicien.viewpager.demo.drag;
 
 import android.os.Handler;
+import android.os.Looper;
 import android.view.DragEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -13,7 +14,7 @@ import com.feicien.viewpager.demo.utils.LogUtils;
 
 import java.lang.ref.WeakReference;
 
-public class ViewPagerDragListenerImp  implements View.OnDragListener {
+public class ViewPagerDragListenerImp implements View.OnDragListener {
     private static final String TAG = "ViewPagerDragListener";
     private static final int EDGE_LEFT = 0;
     private static final int EDGE_RIGHT = 1;
@@ -27,9 +28,9 @@ public class ViewPagerDragListenerImp  implements View.OnDragListener {
     private int mTouchSize;
     private final MyRunnable mRunnable;
     private RecyclerView mRecyclerView;
-    protected final WeakReference<ViewPager> mViewRef;
+    private final WeakReference<ViewPager> mViewRef;
 
-    
+    // Runnable implementation for handling the automatic scrolling when dragging near the edges
     public class MyRunnable implements Runnable {
         private int mEdge;
         private final ViewPager mViewPager;
@@ -45,19 +46,15 @@ public class ViewPagerDragListenerImp  implements View.OnDragListener {
         @Override
         public void run() {
             if (mViewPager == null) {
-                LogUtils.d(TAG, "scrollRunnable can not execute, viewpager is null");
+                LogUtils.d(TAG, "scrollRunnable cannot execute, viewPager is null");
                 return;
             }
             int currentItem = mViewPager.getCurrentItem();
-            if (this.mEdge == EDGE_LEFT) {
-                this.mViewPager.setCurrentItem(currentItem - 1);
-            } else {
-                this.mViewPager.setCurrentItem(currentItem + 1);
-            }
+            mViewPager.setCurrentItem(mEdge == EDGE_LEFT ? currentItem - 1 : currentItem + 1);
             isScrollScheduled = false;
             mAccumulatedDistance = 0;
             if (isDragStart) {
-                triggerPageScroll(this.mViewPager, mTouchCoordinates[0], mTouchSize);
+                triggerPageScroll(mViewPager, mTouchCoordinates[0], mTouchSize);
             }
         }
     }
@@ -66,10 +63,11 @@ public class ViewPagerDragListenerImp  implements View.OnDragListener {
         this.mViewRef = new WeakReference<>(viewPager);
         this.mAccumulatedDistance = 0;
         this.mTouchCoordinates = new int[2];
-        this.mHandler = new Handler();
+        this.mHandler = new Handler(Looper.getMainLooper()); // Use main looper to ensure runs on UI thread
         this.mRunnable = new MyRunnable(viewPager);
     }
 
+    // Method to determine if auto-scroll should be triggered based on the drag position
     public void triggerPageScroll(ViewPager viewPager, float xCoordinate, float touchSize) {
         int delayMillis = this.mAccumulatedDistance < ViewConfiguration.get(viewPager.getContext()).getScaledWindowTouchSlop() ? 1000 : 600;
         float edgeThreshold = touchSize / 4.0f;
@@ -92,69 +90,65 @@ public class ViewPagerDragListenerImp  implements View.OnDragListener {
     }
 
 
-
+    // Retrieve the appropriate drag listener for the current page
     private RecyclerDragListenerImp getDragDispatcherByPageIndex(int pageIndex, ViewPager viewPager) {
         if (viewPager != null) {
-            RecyclerDragListenerImp m22979c = DragManager.getInstance().getDragListener(pageIndex);
-            if (viewPager.getCurrentItem() == pageIndex && m22979c != null) {
-                return m22979c;
+            RecyclerDragListenerImp listener = DragManager.getInstance().getDragListener(pageIndex);
+            if (viewPager.getCurrentItem() == pageIndex && listener != null) {
+                return listener;
             }
-            return null;
         }
         return null;
     }
 
+    // Retrieve the RecyclerView for the current page in the ViewPager
     private RecyclerView getRecyclerViewByPageIndex(int pageIndex, ViewPager viewPager) {
-        if (viewPager.getAdapter() != null && (viewPager.getAdapter() instanceof GridPagerAdapter)) {
+        if (viewPager.getAdapter() != null && viewPager.getAdapter() instanceof GridPagerAdapter) {
             return ((GridPagerAdapter) viewPager.getAdapter()).getPage(pageIndex);
         }
         return null;
     }
 
-    private boolean m3475t(DragInfo dragInfo, int pageIndex, View view, View view2) {
-        RecyclerDragListenerImp dragListenerDispatcher = this.mDragListenerDispatcher;
-        if (dragListenerDispatcher != null) {
-            dragListenerDispatcher.onDragExit(dragInfo);
-            if (view instanceof RecyclerView) {
-                RecyclerView.ItemAnimator itemAnimator = ((RecyclerView) view).getItemAnimator();
+    // Helper method to handle the transition of drag between different pages
+    private boolean transitionDrag(DragInfo dragInfo, int pageIndex, View currentView, View nextView) {
+        if (mDragListenerDispatcher != null) {
+            mDragListenerDispatcher.onDragExit(dragInfo);
+            if (currentView instanceof RecyclerView) {
+                RecyclerView.ItemAnimator itemAnimator = ((RecyclerView) currentView).getItemAnimator();
                 if (itemAnimator == null) {
-                    LogUtils.d(TAG, "has error on move, itemAnimator is null");
+                    LogUtils.d(TAG, "ItemAnimator is null");
                     return true;
                 }
                 itemAnimator.endAnimations();
             }
-            DragInfo dragInfo2 = new DragInfo();
-            if (view2 instanceof RecyclerView) {
-                this.mRecyclerView = (RecyclerView) view2;
+            DragInfo newDragInfo = new DragInfo();
+            if (nextView instanceof RecyclerView) {
+                this.mRecyclerView = (RecyclerView) nextView;
             }
-            RecyclerView recyclerView = this.mRecyclerView;
-            if (recyclerView == null) {
-                LogUtils.d(TAG, "has error on move, nextView == null");
+            if (mRecyclerView == null) {
+                LogUtils.d(TAG, "Next RecyclerView is null");
                 return true;
             }
-            if (recyclerView.getAdapter() != null) {
-                if (this.mRecyclerView.getAdapter().getItemCount() == 1) {
-                    LogUtils.i(TAG, "Only one data, drag and drop is not possible");
-                    return true;
+            if (mRecyclerView.getAdapter() != null && mRecyclerView.getAdapter().getItemCount() != 1) {
+                int newItemIndex = pageIndex >= dragInfo.getPageIndex() ? 0 : mRecyclerView.getAdapter().getItemCount() - 1;
+                newDragInfo.setItemId(mRecyclerView.getAdapter().getItemId(newItemIndex));
+                RecyclerView.ViewHolder viewHolder = mRecyclerView.findViewHolderForAdapterPosition(newItemIndex);
+                if (viewHolder != null) {
+                    newDragInfo.setView(viewHolder.itemView);
                 }
-                int itemCount = pageIndex >= dragInfo.getPageIndex() ? 0 : this.mRecyclerView.getAdapter().getItemCount() - 1;
-                dragInfo2.setItemId(this.mRecyclerView.getAdapter().getItemId(itemCount));
-                RecyclerView.ViewHolder findViewHolderForAdapterPosition = this.mRecyclerView.findViewHolderForAdapterPosition(itemCount);
-                if (findViewHolderForAdapterPosition != null) {
-                    dragInfo2.setView(findViewHolderForAdapterPosition.itemView);
-                }
+                newDragInfo.setPageIndex(pageIndex);
+                mDragListenerDispatcher.onPageTransfer(dragInfo, newDragInfo);
+                dragInfo.setPageIndex(newDragInfo.getPageIndex());
+                dragInfo.setView(newDragInfo.getView());
+            } else {
+                LogUtils.i(TAG, "Insufficient items for drag and drop");
+                return true;
             }
-            dragInfo2.setPageIndex(pageIndex);
-            this.mDragListenerDispatcher.onPageTransfer(dragInfo, dragInfo2);
-            dragInfo.setPageIndex(dragInfo2.getPageIndex());
-            dragInfo.setView(dragInfo2.getView());
         }
         return false;
     }
 
-
-
-
+    // Handle the end of a drag event
     public void onDragEnd(DragInfo dragInfo, ViewPager viewPager) {
         this.mAccumulatedDistance = 0;
         if (this.isDragStart) {
@@ -169,70 +163,56 @@ public class ViewPagerDragListenerImp  implements View.OnDragListener {
         if (dispatcher != null) {
             dispatcher.onDragEnd(dragInfo, getRecyclerViewByPageIndex(dragInfo.getPageIndex(), viewPager));
         }
-
     }
 
-
-
-
+    // Handle the drag-over event to possibly trigger a page change
     public void onDragOver(DragInfo dragInfo, ViewPager viewPager) {
         int currentItem = viewPager.getCurrentItem();
         RecyclerDragListenerImp dispatcher = getDragDispatcherByPageIndex(currentItem, viewPager);
-        RecyclerView recyclerView = getRecyclerViewByPageIndex(dragInfo.getPageIndex(), viewPager);
-        if (recyclerView == null) {
-            LogUtils.d(TAG, "has error on move, pageView == null, dragging pageIndex = " + dragInfo.getPageIndex() + ", pageAdapter = " + viewPager.getAdapter());
+        RecyclerView currentRecyclerView = getRecyclerViewByPageIndex(dragInfo.getPageIndex(), viewPager);
+        if (currentRecyclerView == null) {
+            LogUtils.d(TAG, "Current RecyclerView is null during drag");
             return;
         }
         if (dispatcher != null) {
             if (this.mDragListenerDispatcher != dispatcher) {
-                RecyclerView recyclerView1 = getRecyclerViewByPageIndex(currentItem, viewPager);
-                if (recyclerView1 == null) {
-                    LogUtils.d(TAG, "has error on move, nextView == null, current pageIndex = " + currentItem + ", pageAdapter = " + viewPager.getAdapter());
+                RecyclerView nextRecyclerView = getRecyclerViewByPageIndex(currentItem, viewPager);
+                if (nextRecyclerView == null) {
+                    LogUtils.d(TAG, "Next RecyclerView is null during drag");
                     return;
-                } else if (m3475t(dragInfo, currentItem, recyclerView, recyclerView1)) {
-                    LogUtils.i(TAG, "replaceData ");
-                    return;
-                } else {
+                }
+                if (!transitionDrag(dragInfo, currentItem, currentRecyclerView, nextRecyclerView)) {
                     dispatcher.onDragEnter(dragInfo);
-                    recyclerView = recyclerView1;
+                    currentRecyclerView = nextRecyclerView;
                 }
             }
-            dispatcher.onDragOver(dragInfo, recyclerView);
-        } else {
-            RecyclerDragListenerImp dragListenerDispatcher = this.mDragListenerDispatcher;
-            if (dragListenerDispatcher != null) {
-                dragListenerDispatcher.onDragExit(dragInfo);
-            }
+            dispatcher.onDragOver(dragInfo, currentRecyclerView);
+        } else if (mDragListenerDispatcher != null) {
+            mDragListenerDispatcher.onDragExit(dragInfo);
         }
         this.mDragListenerDispatcher = dispatcher;
 
         this.mTouchSize = dragInfo.getOutShadowSize().x;
-        float dragX = dragInfo.getX();
-        float xCoordinate = (dragX - dragInfo.getOutShadowTouchPoint().x) + (dragInfo.getOutShadowSize().x / 2.0f);
-        float dragY = (dragInfo.getY() - dragInfo.getOutShadowTouchPoint().y) + (dragInfo.getOutShadowSize().y / 2.0f);
-        this.mAccumulatedDistance = (int) (Math.hypot(mTouchCoordinates[0] - xCoordinate, mTouchCoordinates[1] - dragY) + mAccumulatedDistance);
+        float xCoordinate = (dragInfo.getX() - dragInfo.getOutShadowTouchPoint().x) + (this.mTouchSize / 2.0f);
+        float yCoordinate = (dragInfo.getY() - dragInfo.getOutShadowTouchPoint().y) + (dragInfo.getOutShadowSize().y / 2.0f);
+        this.mAccumulatedDistance += (int) Math.hypot(mTouchCoordinates[0] - xCoordinate, mTouchCoordinates[1] - yCoordinate);
         mTouchCoordinates[0] = (int) xCoordinate;
-        mTouchCoordinates[1] = (int) dragY;
+        mTouchCoordinates[1] = (int) yCoordinate;
         triggerPageScroll(viewPager, xCoordinate, this.mTouchSize);
     }
 
-
+    // Handle the start of a drag event
     public void onDragStart(DragInfo dragInfo, ViewPager viewPager) {
-        if (dragInfo == null) {
-            LogUtils.d(TAG, "onDragStart dragInfo is null.");
-            return;
-        }
-        if (viewPager == null) {
-            LogUtils.d(TAG, "onDragStart viewPager is null.");
+        if (dragInfo == null || viewPager == null) {
+            LogUtils.d(TAG, "DragInfo or ViewPager is null at the start of drag");
             return;
         }
         this.isDragStart = true;
         this.mDragListenerDispatcher = null;
         this.mTouchSize = dragInfo.getOutShadowSize().x;
-        float m3276a = (dragInfo.getX() - dragInfo.getOutShadowTouchPoint().x) + (dragInfo.getOutShadowSize().x / 2.0f);
+        float xCoordinate = (dragInfo.getX() - dragInfo.getOutShadowTouchPoint().x) + (this.mTouchSize / 2.0f);
 
-        float edgeThreshold = mTouchSize / 4.0f;
-        if (m3276a - edgeThreshold >= 0 && edgeThreshold + m3276a <= viewPager.getWidth()) {
+        if (xCoordinate - (this.mTouchSize / 4.0f) >= 0 && (this.mTouchSize / 4.0f) + xCoordinate <= viewPager.getWidth()) {
             this.isScrollScheduled = false;
         } else {
             this.isScrollScheduled = true;
@@ -242,37 +222,37 @@ public class ViewPagerDragListenerImp  implements View.OnDragListener {
         if (dispatcher != null) {
             dispatcher.onDragStart(dragInfo, getRecyclerViewByPageIndex(dragInfo.getPageIndex(), viewPager));
         }
-
     }
 
-
-
+    // Main onDrag method that delegates to specific handlers based on the event type
     @Override
     public boolean onDrag(View view, DragEvent dragEvent) {
-        if (view != null && dragEvent != null) {
-            ViewPager viewPager = mViewRef.get();
-            if (view == viewPager && (dragEvent.getLocalState() instanceof DragInfo)) {
-                DragInfo dragInfo = (DragInfo) dragEvent.getLocalState();
-                dragInfo.setX(dragEvent.getX());
-                dragInfo.setY(dragEvent.getY());
-                switch (dragEvent.getAction()) {
-                    case DragEvent.ACTION_DRAG_STARTED:
-                        onDragStart(dragInfo, viewPager);
-                        return true;
-                    case DragEvent.ACTION_DRAG_LOCATION:
-                        onDragOver(dragInfo, viewPager);
-                        return true;
-                    case DragEvent.ACTION_DRAG_ENDED:
-                        onDragEnd(dragInfo, viewPager);
-                        return true;
-                    default:
-                        return true;
-                }
-            }
-            LogUtils.d(TAG, "onDrag: view and getLocalState is null");
+        if (view == null || dragEvent == null) {
+            LogUtils.d(TAG, "View or DragEvent is null in onDrag");
             return false;
         }
-        LogUtils.d(TAG, "onDrag: view and event is null");
+        ViewPager viewPager = mViewRef.get();
+        if (view == viewPager && (dragEvent.getLocalState() instanceof DragInfo)) {
+            DragInfo dragInfo = (DragInfo) dragEvent.getLocalState();
+            dragInfo.setX(dragEvent.getX());
+            dragInfo.setY(dragEvent.getY());
+            switch (dragEvent.getAction()) {
+                case DragEvent.ACTION_DRAG_STARTED:
+                    onDragStart(dragInfo, viewPager);
+                    break;
+                case DragEvent.ACTION_DRAG_LOCATION:
+                    onDragOver(dragInfo, viewPager);
+                    break;
+                case DragEvent.ACTION_DRAG_ENDED:
+                    onDragEnd(dragInfo, viewPager);
+                    break;
+                default:
+                    // Handle other actions if necessary
+                    break;
+            }
+            return true;
+        }
+        LogUtils.d(TAG, "Incompatible view or local state in onDrag");
         return false;
     }
 }
