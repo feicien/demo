@@ -20,8 +20,8 @@ public class ViewPagerDragListenerImp  implements View.OnDragListener {
     private int f34907a;
     private final int[] f34908b;
     private final Handler mHandler;
-    private int f34910d;
-    private int f34911e;
+    private final int f34910d;
+    private final int f34911e;
     private boolean isDragStart;
     private RecyclerDragListenerImp mDragListenerDispatcher;
     private int f34914h;
@@ -164,20 +164,7 @@ public class ViewPagerDragListenerImp  implements View.OnDragListener {
         return false;
     }
 
-    public void clearMove() {
-    }
 
-    public boolean acceptDrop(DragInfo dragInfo, ViewPager viewPager) {
-        RecyclerDragListenerImp dispatcher = getDragDispatcherByPageIndex(dragInfo.getPageIndex(), viewPager);
-        if (dispatcher == null) {
-            return false;
-        }
-        return dispatcher.acceptDrop(dragInfo, getRecyclerViewByPageIndex(dragInfo.getPageIndex(), viewPager));
-    }
-
-    public long getDraggingId() {
-        return 0L;
-    }
 
 
     public void onDragEnd(DragInfo dragInfo, ViewPager viewPager) {
@@ -195,20 +182,14 @@ public class ViewPagerDragListenerImp  implements View.OnDragListener {
             }
         }
         RecyclerDragListenerImp dispatcher = getDragDispatcherByPageIndex(dragInfo.getPageIndex(), viewPager);
-        if (dispatcher == null) {
-            return;
+        if (dispatcher != null) {
+            dispatcher.onDragEnd(dragInfo, getRecyclerViewByPageIndex(dragInfo.getPageIndex(), viewPager));
         }
-        dispatcher.onDragEnd(dragInfo, getRecyclerViewByPageIndex(dragInfo.getPageIndex(), viewPager));
+
     }
 
-    public void onDragEnter(DragInfo dragInfo, ViewPager viewPager) {
-    }
 
-    public void onDragExit(DragInfo dragInfo, ViewPager viewPager) {
-    }
 
-    public void onPageTransfer(DragInfo dragInfo, DragInfo dragInfo2) {
-    }
 
     public void onDragOver(DragInfo dragInfo, ViewPager viewPager) {
         int currentItem = viewPager.getCurrentItem();
@@ -228,7 +209,7 @@ public class ViewPagerDragListenerImp  implements View.OnDragListener {
                     LogUtils.i(TAG, "replaceData ");
                     return;
                 } else {
-                    dispatcher.onDragEnter(dragInfo, recyclerView1);
+                    dispatcher.onDragEnter(dragInfo);
                     recyclerView = recyclerView1;
                 }
             }
@@ -254,9 +235,6 @@ public class ViewPagerDragListenerImp  implements View.OnDragListener {
         m3488g(viewPager, f, this.f34915i);
     }
 
-    public boolean onDragPrepare(DragInfo dragInfo, ViewPager viewPager) {
-        return true;
-    }
 
     public void onDragStart(DragInfo dragInfo, ViewPager viewPager) {
         if (dragInfo == null) {
@@ -279,19 +257,12 @@ public class ViewPagerDragListenerImp  implements View.OnDragListener {
             this.mHandler.postDelayed(this.mRunnable, 600L);
         }
         RecyclerDragListenerImp dispatcher = getDragDispatcherByPageIndex(dragInfo.getPageIndex(), viewPager);
-        if (dispatcher == null) {
-            return;
+        if (dispatcher != null) {
+            dispatcher.onDragStart(dragInfo, getRecyclerViewByPageIndex(dragInfo.getPageIndex(), viewPager));
         }
-        dispatcher.onDragStart(dragInfo, getRecyclerViewByPageIndex(dragInfo.getPageIndex(), viewPager));
+
     }
 
-    public void onDrop(DragInfo dragInfo, ViewPager viewPager) {
-        RecyclerDragListenerImp dispatcher = getDragDispatcherByPageIndex(dragInfo.getPageIndex(), viewPager);
-        if (dispatcher == null) {
-            return;
-        }
-        dispatcher.onDrop(dragInfo, getRecyclerViewByPageIndex(dragInfo.getPageIndex(), viewPager));
-    }
 
 
     @Override
@@ -299,10 +270,6 @@ public class ViewPagerDragListenerImp  implements View.OnDragListener {
         if (view != null && dragEvent != null) {
             if (view == this.mViewRef.get() && (dragEvent.getLocalState() instanceof DragInfo)) {
                 DragInfo dragInfo = (DragInfo) dragEvent.getLocalState();
-                if (!onDragPrepare(dragInfo, (ViewPager) view)) {
-                    LogUtils.d(TAG, " onDrag onDragPrepare");
-                    return false;
-                }
                 dragInfo.setX(dragEvent.getX());
                 dragInfo.setY(dragEvent.getY());
                 switch (dragEvent.getAction()) {
@@ -312,17 +279,8 @@ public class ViewPagerDragListenerImp  implements View.OnDragListener {
                     case 2:
                         onDragOver(dragInfo, (ViewPager) view);
                         return true;
-                    case 3:
-                        onDrop(dragInfo, (ViewPager) view);
-                        return true;
                     case 4:
                         onDragEnd(dragInfo, (ViewPager) view);
-                        return true;
-                    case 5:
-                        onDragEnter(dragInfo, (ViewPager) view);
-                        return true;
-                    case 6:
-                        onDragExit(dragInfo, (ViewPager) view);
                         return true;
                     default:
                         return true;

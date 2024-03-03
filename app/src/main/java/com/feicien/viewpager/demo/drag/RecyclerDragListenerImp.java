@@ -10,7 +10,6 @@ import com.feicien.viewpager.demo.adapter.MyGridRecyclerAdapter;
 import com.feicien.viewpager.demo.adapter.OnRecyclerItemClickListener;
 import com.feicien.viewpager.demo.utils.LogUtils;
 
-import java.util.Objects;
 
 
 public class RecyclerDragListenerImp  {
@@ -68,12 +67,6 @@ public class RecyclerDragListenerImp  {
 
     
 
-    public void onDrop(DragInfo dragInfo, RecyclerView recyclerView) {
-        if (dragInfo == null) {
-            LogUtils.d(TAG, "onDrop dragInfo is null ");
-        }
-    }
-
     public void clearMove() {
         this.point.set(Float.MIN_VALUE, Float.MIN_VALUE);
     }
@@ -82,9 +75,6 @@ public class RecyclerDragListenerImp  {
         return this.mDraggingId;
     }
 
-    public boolean acceptDrop(DragInfo dragInfo, RecyclerView recyclerView) {
-        return true;
-    }
 
     public void onPageTransfer(DragInfo dragInfo, DragInfo dragInfo2) {
         if (mGridRecyclerAdapter != null) {
@@ -113,7 +103,7 @@ public class RecyclerDragListenerImp  {
     
     
 
-    public void onDragEnter(DragInfo dragInfo, RecyclerView recyclerView) {
+    public void onDragEnter(DragInfo dragInfo) {
         if (dragInfo == null) {
             LogUtils.d(TAG, "onDragEnter dragInfo is null ");
             return;
@@ -176,9 +166,6 @@ public class RecyclerDragListenerImp  {
         LogUtils.d(TAG, "onDragOver dragInfo or recyclerView is null ");
     }
 
-    public boolean onDragPrepare(DragInfo dragInfo, RecyclerView recyclerView) {
-        return Objects.equals(recyclerView.getTag(), Integer.valueOf(dragInfo.getPageIndex()));
-    }
 
     public void onDragStart(DragInfo dragInfo, RecyclerView recyclerView) {
         if (dragInfo != null && recyclerView != null) {
